@@ -14,7 +14,8 @@ import lightning as L
 
 model_list = ['resnet101', 'resnet50', 'resnet50_mldecoder', 'swinv2', 'swinv2_mldecoder', 
               'tresnet_l_learnable_mldecoder', 'tresnet_xl_learnable_mldecoder', 'tresnet_xl_mldecoder', 
-                'tresnet_xl_q2l', 'tresnetv2_l_mldecoder', 'cvt_q2l', 'cvt_learnable_mldecoder', 'cvt_mldecoder']
+                'tresnet_xl_q2l', 'tresnetv2_l_mldecoder', 'cvt_q2l', 'cvt_learnable_mldecoder', 'cvt_mldecoder',
+                'cvt384_q2l']
 
 loss_list = ['AsymmetricLoss', 'AsymmetricLossOptimized', 'ComputePrior', 'FocalLoss', 
              'PartialSelectiveLoss', 'TwoWayLoss', 'focal_binary_cross_entropy', 
@@ -24,7 +25,7 @@ loss_list = ['AsymmetricLoss', 'AsymmetricLossOptimized', 'ComputePrior', 'Focal
 parser = argparse.ArgumentParser(description='PyTorch Training')
 parser.add_argument('--img_size', default=224, type=int)
 parser.add_argument('--epochs', default=10, type=int)
-parser.add_argument('--warmup', default=5, type=int)
+parser.add_argument('--warmup', default=0, type=int)
 parser.add_argument('--lr', default=3e-4, type=float)
 parser.add_argument('--batch_size', default=100, type=int)
 parser.add_argument('--weight_decay', default=1e-5, type=float)
@@ -36,7 +37,7 @@ parser.add_argument('--model_name', default='cvt_q2l', choices = model_list)
 parser.add_argument('--path', default='/home/sorijune/AICOSS/DATA/')
 parser.add_argument('--loss_name', default='PartialSelectiveLoss', choices = loss_list)
 parser.add_argument('--project', default='CvT')
-parser.add_argument('--use_wandb', default=False, type=bool)
+parser.add_argument('--use_wandb', action="store_true")
 
 
 
