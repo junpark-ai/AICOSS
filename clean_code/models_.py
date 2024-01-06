@@ -313,6 +313,25 @@ class cvt_q2l(nn.Module):
         return self.classifier(h)
     
 
+class cvt_learnable_mldecoder(nn.Module):
+    def __init__(self):
+        super(cvt_learnable_mldecoder, self).__init__()
+
+        self.backbone = CvtForImageClassification.from_pretrained('microsoft/cvt-21')
+        self.backbone.classifier = nn.Identity()
+        self.backbone.layernorm = nn.Identity()
+        # Image Classifier
+        self.mldecoder = learnable_MLDecoder(num_classes=60, initial_num_features=384)
+
+    def forward(self, x):
+        # CvT
+        features = self.backbone(x, output_hidden_states=True).hidden_states[2]
+        
+        # multi label classification
+        out = self.mldecoder(features)
+        return out
+
+
 class cvt_mldecoder(nn.Module):
     def __init__(self):
         super(cvt_mldecoder, self).__init__()
@@ -320,14 +339,13 @@ class cvt_mldecoder(nn.Module):
         self.backbone = CvtForImageClassification.from_pretrained('microsoft/cvt-21')
         self.backbone.classifier = nn.Identity()
         self.backbone.layernorm = nn.Identity()
-        
         # Image Classifier
-        # self.cls = nn.Linear(1536, 60) # large
-        self.cls = MLDecoder(num_classes=60, initial_num_features=384)
+        self.mldecoder = MLDecoder(num_classes=60, initial_num_features=384)
 
     def forward(self, x):
-        # Swin v2
+        # CvT
         features = self.backbone(x, output_hidden_states=True).hidden_states[2]
+        
         # multi label classification
-        out = self.cls(features)
+        out = self.mldecoder(features)
         return out
