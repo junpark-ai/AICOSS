@@ -72,8 +72,8 @@ def train(model, criterion, optimizer, train_loader, args, scheduler=None, val_l
                     APs.append(average_precision_score(label_np[:, i], pred_np[:, i]))
                 ap = np.mean(APs)
 
-            # Backpropagation
-            fabric.backward(loss)
+                # Backpropagation
+                fabric.backward(loss)
             
             if not is_accumulating:
                 optimizer.step()
