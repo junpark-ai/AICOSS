@@ -38,6 +38,7 @@ parser.add_argument('--path', default='/home/sorijune/AICOSS/DATA/')
 parser.add_argument('--loss_name', default='PartialSelectiveLoss', choices = loss_list)
 parser.add_argument('--project', default='CvT')
 parser.add_argument('--use_wandb', action="store_true")
+parser.add_argument('--grad_accumulation', default=1, type=int)
 
 
 

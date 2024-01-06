@@ -51,29 +51,34 @@ def train(model, criterion, optimizer, train_loader, args, scheduler=None, val_l
         model.train()
         total_loss, map = 0, 0
         loop = tqdm(train_loader, leave=True)
-        for imgs, label in loop:
+        for iteration, batch in enumerate(loop, 1):
+            # Accumulate gradient -> 더 큰 batch_size로 학습 가능
+            is_accumulating = ((iteration % args.grad_accumulation) != 0)
+
             # imgs, label = imgs.float().to(args.device), label.float().to(args.device)
+            imgs, label = batch
             
-            # Forward & Loss
-            predicted_label = model(imgs)
+            with fabric.no_backward_sync(model, enabled=is_accumulating):
+                # Forward & Loss
+                predicted_label = model(imgs)
 
-            loss = criterion(predicted_label.squeeze(1), label)
-            prior.update(predicted_label)
-            APs = []
-            label_np = label.cpu().detach().numpy()
-            pred_np = nn.Sigmoid()(predicted_label.squeeze(1)).cpu().detach().numpy()
+                loss = criterion(predicted_label.squeeze(1), label)
+                prior.update(predicted_label)
+                APs = []
+                label_np = label.cpu().detach().numpy()
+                pred_np = nn.Sigmoid()(predicted_label.squeeze(1)).cpu().detach().numpy()
 
-            for i in range(predicted_label.shape[1]):
-                APs.append(average_precision_score(label_np[:, i], pred_np[:, i]))
+                for i in range(predicted_label.shape[1]):
+                    APs.append(average_precision_score(label_np[:, i], pred_np[:, i]))
+                ap = np.mean(APs)
 
-            ap = np.mean(APs)
             # Backpropagation
-            optimizer.zero_grad()
             fabric.backward(loss)
-            # nn.utils.clip_grad_norm_(model.parameters(), 1)
-            optimizer.step()
             
-            
+            if not is_accumulating:
+                optimizer.step()
+                optimizer.zero_grad()
+                # fabric.print(f'Iteration: {iteration}') # for GradAccumulation check
             
             total_loss += loss.item()
             loop.set_description(f"Train")
