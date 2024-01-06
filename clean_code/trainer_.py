@@ -46,12 +46,12 @@ def train(model, criterion, optimizer, train_loader, args, scheduler=None, val_l
     if Wandb and fabric.global_rank == 0:
         wandb.init(group='DDP', entity='aicoss-rcvuos', project=args.project, name= args.model_name + '-' +args.loss_name, notes=str(torch.cuda.get_device_name())+' x '+str(1))
     # 학습
-    prior = ComputePrior(train_loader.dataset.__getitem__(0)[1])
+    # prior = ComputePrior(train_loader.dataset.__getitem__(0)[1])
     for epoch in range(args.epochs):
         model.train()
         total_loss, map = 0, 0
         loop = tqdm(train_loader, leave=True)
-        for iteration, batch in enumerate(loop, 1):
+        for iteration, batch in enumerate(loop):
             # Accumulate gradient -> 더 큰 batch_size로 학습 가능
             is_accumulating = ((iteration % args.grad_accumulation) != 0)
 
@@ -63,18 +63,20 @@ def train(model, criterion, optimizer, train_loader, args, scheduler=None, val_l
                 predicted_label = model(imgs)
 
                 loss = criterion(predicted_label.squeeze(1), label)
-                prior.update(predicted_label)
-                APs = []
-                label_np = label.cpu().detach().numpy()
-                pred_np = nn.Sigmoid()(predicted_label.squeeze(1)).cpu().detach().numpy()
-
-                for i in range(predicted_label.shape[1]):
-                    APs.append(average_precision_score(label_np[:, i], pred_np[:, i]))
-                ap = np.mean(APs)
 
                 # Backpropagation
                 fabric.backward(loss)
             
+            # prior.update(predicted_label)
+
+            APs = []
+            label_np = label.cpu().detach().numpy()
+            pred_np = nn.Sigmoid()(predicted_label.squeeze(1)).cpu().detach().numpy()
+
+            for i in range(predicted_label.shape[1]):
+                APs.append(average_precision_score(label_np[:, i], pred_np[:, i]))
+            ap = np.mean(APs)
+
             if not is_accumulating:
                 optimizer.step()
                 optimizer.zero_grad()
