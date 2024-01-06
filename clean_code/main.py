@@ -143,9 +143,12 @@ def main():
         criterion = globals()[args.loss_name]()
          
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)  # TODO
-    base_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs, eta_min=args.min_lr)  # TODO
-    scheduler = warmup_scheduler.GradualWarmupScheduler(optimizer, multiplier=1., total_epoch=args.warmup, after_scheduler=base_scheduler)
-
+    base_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs+args.warmup, eta_min=args.min_lr)  # TODO
+    if args.warmup != 0:
+        scheduler = warmup_scheduler.GradualWarmupScheduler(optimizer, multiplier=1., total_epoch=args.warmup, after_scheduler=base_scheduler)
+    else:
+        scheduler = base_scheduler
+        
     train_loader, val_loader, test_loader = My_DataLoader(train_data, args, val_data, test_df, num_workers=4)
 
     # Fabric
