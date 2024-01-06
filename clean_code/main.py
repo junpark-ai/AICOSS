@@ -8,6 +8,7 @@ import warnings
 from sklearn.model_selection import train_test_split
 from datetime import datetime
 import argparse
+import warmup_scheduler
 
 import lightning as L
 
@@ -23,6 +24,7 @@ loss_list = ['AsymmetricLoss', 'AsymmetricLossOptimized', 'ComputePrior', 'Focal
 parser = argparse.ArgumentParser(description='PyTorch Training')
 parser.add_argument('--img_size', default=224, type=int)
 parser.add_argument('--epochs', default=10, type=int)
+parser.add_argument('--warmup', default=5, type=int)
 parser.add_argument('--lr', default=3e-4, type=float)
 parser.add_argument('--batch_size', default=100, type=int)
 parser.add_argument('--weight_decay', default=1e-5, type=float)
@@ -139,7 +141,8 @@ def main():
         criterion = globals()[args.loss_name]()
          
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)  # TODO
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs, eta_min=args.min_lr)  # TODO
+    base_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs, eta_min=args.min_lr)  # TODO
+    scheduler = warmup_scheduler.GradualWarmupScheduler(optimizer, multiplier=1., total_epoch=5, after_scheduler=base_scheduler)
 
     train_loader, val_loader, test_loader = My_DataLoader(train_data, args, val_data, test_df, num_workers=4)
 
