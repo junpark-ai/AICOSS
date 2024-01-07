@@ -68,20 +68,20 @@ class TransformerDecoderLayerOptimal(nn.Module):
         return tgt
 
 
-# @torch.jit.script
-# class ExtrapClasses(object):
-#     def __init__(self, num_queries: int, group_size: int):
-#         self.num_queries = num_queries
-#         self.group_size = group_size
-#
-#     def __call__(self, h: torch.Tensor, class_embed_w: torch.Tensor, class_embed_b: torch.Tensor, out_extrap:
-#     torch.Tensor):
-#         # h = h.unsqueeze(-1).expand(-1, -1, -1, self.group_size)
-#         h = h[..., None].repeat(1, 1, 1, self.group_size) # torch.Size([bs, 5, 768, groups])
-#         w = class_embed_w.view((self.num_queries, h.shape[2], self.group_size))
-#         out = (h * w).sum(dim=2) + class_embed_b
-#         out = out.view((h.shape[0], self.group_size * self.num_queries))
-#         return out
+@torch.jit.script
+class ExtrapClasses(object):
+    def __init__(self, num_queries: int, group_size: int):
+        self.num_queries = num_queries
+        self.group_size = group_size
+
+    def __call__(self, h: torch.Tensor, class_embed_w: torch.Tensor, class_embed_b: torch.Tensor, out_extrap:
+    torch.Tensor):
+        # h = h.unsqueeze(-1).expand(-1, -1, -1, self.group_size)
+        h = h[..., None].repeat(1, 1, 1, self.group_size) # torch.Size([bs, 5, 768, groups])
+        w = class_embed_w.view((self.num_queries, h.shape[2], self.group_size))
+        out = (h * w).sum(dim=2) + class_embed_b
+        out = out.view((h.shape[0], self.group_size * self.num_queries))
+        return out
 
 @torch.jit.script
 class GroupFC(object):
@@ -198,7 +198,7 @@ class learnable_MLDecoder(nn.Module):
             query_embed = None
 
         # decoder
-        decoder_dropout = 0.1
+        decoder_dropout = 0.5
         num_layers_decoder = 1
         dim_feedforward = 2048
         layer_decode = TransformerDecoderLayerOptimal(d_model=decoder_embedding,

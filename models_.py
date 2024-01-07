@@ -2,6 +2,21 @@ import timm
 import torch.nn as nn
 import torch
 from ml_decoder import MLDecoder, learnable_MLDecoder
+import random
+import os
+import numpy as np
+
+def seed_everything(seed):
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
+
+seed_everything(41) # Seed 고정
+
 
 ## Define Model
 class swinv2(nn.Module):
@@ -114,7 +129,22 @@ class tresnet_xl_learnable_mldecoder(nn.Module):
         out = self.mldecoder(features_vit)
         return out
 
+class tresnet_l_learnable_mldecoder(nn.Module):
+    def __init__(self):
+        super(tresnet_l_learnable_mldecoder, self).__init__()
 
+        self.backbone = timm.create_model("tresnet_l", pretrained=True)
+        self.backbone.head = nn.Identity()
+        # Image Classifier
+        self.mldecoder = learnable_MLDecoder(num_classes=60, initial_num_features=2432)
+
+    def forward(self, images):
+        # Swin v2
+        features_vit = self.backbone(images)
+        
+        # multi label classification
+        out = self.mldecoder(features_vit)
+        return out
 
 class swinv2_mldecoder(nn.Module):
     def __init__(self):
@@ -153,71 +183,7 @@ class tresnetv2_l_mldecoder(nn.Module):
         # multi label classification
         out = self.mldecoder(features_vit)
         return out
-    
 
-class tresnet_swinv2(nn.Module):
-    def __init__(self):
-        super(tresnet_swinv2, self).__init__()
-
-        self.backbone1 = timm.create_model("swinv2_base_window12_192", pretrained=True)
-        self.backbone1.head = nn.Identity()
-        
-        self.backbone2 = timm.create_model("tresnet_xl", pretrained=True)
-        self.backbone2.head = nn.Identity()
-        
-        # MLDecoder
-        self.cls = MLDecoder(num_classes=60, initial_num_features=3680)
-
-    def forward(self, images):
-        # Swin v2
-        features_vit = self.backbone1(images).permute(0,3,1,2)
-        
-        # tresnet xl
-        features_cnn = self.backbone2(images)
-        
-        features = torch.cat([features_vit, features_cnn], axis=1)
-        
-        # MLDecoder
-        out = self.cls(features)
-        
-        return out
-
-    
-    
-
-# def MLP_Module(in_dim, out_dim):
-#     return nn.Sequential(
-#             nn.Linear(in_dim, out_dim, bias=True),
-#             nn.BatchNorm1d(out_dim),
-#             nn.ReLU()
-#             )
-
-
-    
-# class withcorrelation(nn.Module):
-#     def __init__(self):
-#         super(withcorrelation, self).__init__()
-
-#         self.backbone = timm.create_model("tresnet_xl", pretrained=True)
-#         self.backbone.head = nn.Identity()
-#         self.corr_backbone = nn.Sequential(
-#                 MLP_Module(60,128),
-#                 MLP_Module(128,512),
-#                 MLP_Module(512,2048),
-#                 MLP_Module(2048,2048),
-#                 MLP_Module(2048,2048),
-#                 MLP_Module(2048,1536),
-#                 )
-#         # Image Classifier
-#         self.mldecoder = MLDecoder(num_classes=60, initial_num_features=2656)
-
-#     def forward(self, images, correlation):
-#         # Swin v2
-#         features_vit = self.backbone(images)
-        
-#         # multi label classification
-#         out = self.mldecoder(features_vit)
-#         return out
 
 
 # 모델 변경할 때, conv_out 부분만 바꿔주면 됨
@@ -282,67 +248,12 @@ class tresnet_xl_q2l(nn.Module):
         return self.classifier(h)
 
 
-class mldecoder_q2l(nn.Module):
-    def __init__(
-        self, conv_out=2656, num_classes=60, hidden_dim=256, nheads=8, 
-        encoder_layers=1, decoder_layers=2):
-
-        
-        super(mldecoder_q2l, self).__init__()
-
-        self.num_classes = num_classes
-        self.hidden_dim = hidden_dim
-
-        self.backbone = timm.create_model("tresnet_xl", pretrained=True)
-        self.backbone.head = nn.Identity()
-        self.conv = nn.Conv2d(conv_out, hidden_dim, 1)
-        self.transformer = nn.Transformer(
-            hidden_dim, nheads, encoder_layers, decoder_layers)
-
-
-        # prediction head
-        self.classifier = nn.Linear(num_classes * hidden_dim, num_classes)
-        self.mldecoder = MLDecoder(num_classes=num_classes, initial_num_features=conv_out)
-        # learnable label embedding
-        self.label_emb = nn.Parameter(torch.rand(1, num_classes, hidden_dim))
-
-    def forward(self, x):
-        
-        # produces output of shape [N x C x H x W]
-        out = self.backbone(x)
-        
-        # reduce number of feature planes for the transformer
-        h = self.conv(out)
-        B, C, H, W = h.shape
-
-        # convert h from [N x C x H x W] to [H*W x N x C] (N=batch size)
-        # this corresponds to the [SIZE x BATCH_SIZE x EMBED_DIM] dimensions 
-        # that the transformer expects
-        h = h.flatten(2).permute(2, 0, 1)
-        
-        # image feature vector "h" is sent in after transformation above; we 
-        # also convert label_emb from [1 x TARGET x (hidden)EMBED_SIZE] to 
-        # [TARGET x BATCH_SIZE x (hidden)EMBED_SIZE]
-        label_emb = self.label_emb.repeat(B, 1, 1)
-        label_emb = label_emb.transpose(0, 1)
-        h = self.transformer(h, label_emb).transpose(0, 1)
-        
-        # output from transformer was of dim [TARGET x BATCH_SIZE x EMBED_SIZE];
-        # however, we transposed it to [BATCH_SIZE x TARGET x EMBED_SIZE] above.
-        # below we reshape to [BATCH_SIZE x TARGET*EMBED_SIZE].
-        #
-        # next, we project transformer outputs to class labels
-        h = torch.reshape(h,(B, self.num_classes * self.hidden_dim))
-
-        return self.classifier(h), self.mldecoder(out)
-
-
 # for CvT
-from transformers import AutoFeatureExtractor, CvtForImageClassification
+from transformers import CvtForImageClassification
 
 class cvt_q2l(nn.Module):
     def __init__(
-        self, conv_out=64, num_classes=60, hidden_dim=256, nheads=8, 
+        self, conv_out=384, num_classes=60, hidden_dim=256, nheads=8, 
         encoder_layers=1, decoder_layers=2):
         """
         Args:
@@ -359,6 +270,7 @@ class cvt_q2l(nn.Module):
 
         self.backbone = CvtForImageClassification.from_pretrained('microsoft/cvt-21')
         self.backbone.classifier = nn.Identity()
+        self.backbone.layernorm = nn.Identity()
         self.conv = nn.Conv2d(conv_out, hidden_dim, 1)
         self.transformer = nn.Transformer(
             hidden_dim, nheads, encoder_layers, decoder_layers)
@@ -373,7 +285,7 @@ class cvt_q2l(nn.Module):
     def forward(self, x):
         
         # produces output of shape [N x C x H x W]
-        out = self.backbone(x, output_hidden_states=True).hidden_states[0]
+        out = self.backbone(x, output_hidden_states=True).hidden_states[2]
         
         # reduce number of feature planes for the transformer
         h = self.conv(out)
@@ -399,3 +311,103 @@ class cvt_q2l(nn.Module):
         h = torch.reshape(h,(B, self.num_classes * self.hidden_dim))
 
         return self.classifier(h)
+
+
+class cvt384_q2l(nn.Module):
+    def __init__(
+        self, conv_out=1024, num_classes=60, hidden_dim=256, nheads=8, 
+        encoder_layers=1, decoder_layers=2):
+        """
+        Args:
+            conv_out (int): Backbone output channels.
+            num_classes (int): Number of possible label classes
+            hidden_dim (int, optional): Hidden channels from linear projection of
+            backbone output. Defaults to 256.
+        """        
+        
+        super().__init__()
+
+        self.num_classes = num_classes
+        self.hidden_dim = hidden_dim
+
+        self.backbone = CvtForImageClassification.from_pretrained('microsoft/cvt-w24-384-22k')
+        self.backbone.classifier = nn.Identity()
+        self.backbone.layernorm = nn.Identity()
+        self.conv = nn.Conv2d(conv_out, hidden_dim, 1)
+        self.transformer = nn.Transformer(
+            hidden_dim, nheads, encoder_layers, decoder_layers)
+
+
+        # prediction head
+        self.classifier = nn.Linear(num_classes * hidden_dim, num_classes)
+
+        # learnable label embedding
+        self.label_emb = nn.Parameter(torch.rand(1, num_classes, hidden_dim))
+
+    def forward(self, x):
+        
+        # produces output of shape [N x C x H x W]
+        out = self.backbone(x, output_hidden_states=True).hidden_states[2]
+        
+        # reduce number of feature planes for the transformer
+        h = self.conv(out)
+        B, C, H, W = h.shape
+
+        # convert h from [N x C x H x W] to [H*W x N x C] (N=batch size)
+        # this corresponds to the [SIZE x BATCH_SIZE x EMBED_DIM] dimensions 
+        # that the transformer expects
+        h = h.flatten(2).permute(2, 0, 1)
+        
+        # image feature vector "h" is sent in after transformation above; we 
+        # also convert label_emb from [1 x TARGET x (hidden)EMBED_SIZE] to 
+        # [TARGET x BATCH_SIZE x (hidden)EMBED_SIZE]
+        label_emb = self.label_emb.repeat(B, 1, 1)
+        label_emb = label_emb.transpose(0, 1)
+        h = self.transformer(h, label_emb).transpose(0, 1)
+        
+        # output from transformer was of dim [TARGET x BATCH_SIZE x EMBED_SIZE];
+        # however, we transposed it to [BATCH_SIZE x TARGET x EMBED_SIZE] above.
+        # below we reshape to [BATCH_SIZE x TARGET*EMBED_SIZE].
+        #
+        # next, we project transformer outputs to class labels
+        h = torch.reshape(h,(B, self.num_classes * self.hidden_dim))
+
+        return self.classifier(h)
+
+
+class cvt_learnable_mldecoder(nn.Module):
+    def __init__(self):
+        super(cvt_learnable_mldecoder, self).__init__()
+
+        self.backbone = CvtForImageClassification.from_pretrained('microsoft/cvt-21')
+        self.backbone.classifier = nn.Identity()
+        self.backbone.layernorm = nn.Identity()
+        # Image Classifier
+        self.mldecoder = learnable_MLDecoder(num_classes=60, initial_num_features=384)
+
+    def forward(self, x):
+        # CvT
+        features = self.backbone(x, output_hidden_states=True).hidden_states[2]
+        
+        # multi label classification
+        out = self.mldecoder(features)
+        return out
+
+
+class cvt_mldecoder(nn.Module):
+    def __init__(self):
+        super(cvt_mldecoder, self).__init__()
+
+        self.backbone = CvtForImageClassification.from_pretrained('microsoft/cvt-21')
+        self.backbone.classifier = nn.Identity()
+        self.backbone.layernorm = nn.Identity()
+        # Image Classifier
+        self.mldecoder = MLDecoder(num_classes=60, initial_num_features=384)
+
+    def forward(self, x):
+        # CvT
+        features = self.backbone(x, output_hidden_states=True).hidden_states[2]
+        
+        # multi label classification
+        out = self.mldecoder(features)
+        return out
