@@ -14,7 +14,6 @@
 # ignore all files in the build/ directory
 wandb/
 DATA/
-clean_code/wandb/
 
 # ignore doc/notes.txt, but not doc/server/arch.txt
 doc/*.txt
