@@ -26,14 +26,14 @@ parser = argparse.ArgumentParser(description='PyTorch Training')
 parser.add_argument('--img_size', default=224, type=int)
 parser.add_argument('--epochs', default=10, type=int)
 parser.add_argument('--warmup', default=0, type=int)
-parser.add_argument('--lr', default=3e-4, type=float)
-parser.add_argument('--batch_size', default=100, type=int)
-parser.add_argument('--weight_decay', default=1e-5, type=float)
+parser.add_argument('--lr', default=1e-4, type=float)
+parser.add_argument('--batch_size', default=8, type=int)
+parser.add_argument('--weight_decay', default=1e-2, type=float)
 parser.add_argument('--min_lr', default=1e-6, type=float)
 parser.add_argument('--seed', default=41, type=int)
 parser.add_argument('--gpu', default='0, 1, 2, 3', type=str)
 
-parser.add_argument('--model_name', default='cvt_q2l', choices = model_list)
+parser.add_argument('--model_name', default='cvt384_q2l', choices = model_list)
 parser.add_argument('--path', default='/home/sorijune/AICOSS/DATA/')
 parser.add_argument('--loss_name', default='PartialSelectiveLoss', choices = loss_list)
 parser.add_argument('--project', default='CvT')
@@ -142,14 +142,17 @@ def main():
     else:
         criterion = globals()[args.loss_name]()
          
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)  # TODO
-    base_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs+args.warmup, eta_min=args.min_lr)  # TODO
-    if args.warmup != 0:
-        scheduler = warmup_scheduler.GradualWarmupScheduler(optimizer, multiplier=1., total_epoch=args.warmup, after_scheduler=base_scheduler)
-    else:
-        scheduler = base_scheduler
+    
+    # base_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs+args.warmup, eta_min=args.min_lr)  # TODO
+    # if args.warmup != 0:
+    #     scheduler = warmup_scheduler.GradualWarmupScheduler(optimizer, multiplier=1., total_epoch=args.warmup, after_scheduler=base_scheduler)
+    # else:
+    #     scheduler = base_scheduler
         
     train_loader, val_loader, test_loader = My_DataLoader(train_data, args, val_data, test_df, num_workers=4)
+
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)  # TODO
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, steps_per_epoch=len(train_loader), epochs=args.epochs, pct_start=0.1)
 
     # Fabric
     model, optimizer = fabric.setup(model, optimizer)

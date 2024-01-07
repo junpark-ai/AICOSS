@@ -87,12 +87,11 @@ def train(model, criterion, optimizer, train_loader, args, scheduler=None, val_l
             loop.set_postfix(loss=loss.item(), ap=ap.item())
             map += ap.item()
 
+            if scheduler != None:
+                scheduler.step()
+            
         if fabric.global_rank == 0:
             print(f"Epoch {epoch + 1} train loss: {total_loss / len(train_loader):.4f} train map = {map / len(train_loader):.4f}")
-
-
-        if scheduler != None:
-            scheduler.step()
             
         if val_loader != None:
             val_loss, val_map = val(model, criterion, val_loader, args, fabric)

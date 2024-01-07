@@ -315,7 +315,7 @@ class cvt_q2l(nn.Module):
 
 class cvt384_q2l(nn.Module):
     def __init__(
-        self, conv_out=1024, num_classes=60, hidden_dim=256, nheads=8, 
+        self, conv_out=1024, num_classes=60, hidden_dim=2048, nheads=4, 
         encoder_layers=1, decoder_layers=2):
         """
         Args:
