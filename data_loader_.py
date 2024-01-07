@@ -47,8 +47,11 @@ def My_DataLoader(train_data, args, val_data=None, test_data=None, num_workers=1
     train_dataset = CustomDataset(train_data, train_transform)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers)
 
-    val_dataset = CustomDataset(val_data, test_transform)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers)
+    if val_data is not None:
+        val_dataset = CustomDataset(val_data, test_transform)
+        val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers)
+    else:
+        val_loader = None
     
     test_dataset = CustomDataset(test_data, test_transform)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers)
