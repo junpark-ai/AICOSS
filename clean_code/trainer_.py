@@ -69,13 +69,13 @@ def train(model, criterion, optimizer, train_loader, args, scheduler=None, val_l
             
             # prior.update(predicted_label)
 
-            APs = []
-            label_np = label.cpu().detach().numpy()
-            pred_np = nn.Sigmoid()(predicted_label.squeeze(1)).cpu().detach().numpy()
+                APs = []
+                label_np = label.cpu().detach().numpy()
+                pred_np = nn.Sigmoid()(predicted_label.squeeze(1)).cpu().detach().numpy()
 
-            for i in range(predicted_label.shape[1]):
-                APs.append(average_precision_score(label_np[:, i], pred_np[:, i]))
-            ap = np.mean(APs)
+                for i in range(predicted_label.shape[1]):
+                    APs.append(average_precision_score(label_np[:, i], pred_np[:, i]))
+                ap = np.mean(APs)
 
             if not is_accumulating:
                 optimizer.step()
