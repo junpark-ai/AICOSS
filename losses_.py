@@ -268,7 +268,7 @@ class PartialSelectiveLoss(nn.Module):
 
         self.targets_weights = None
 
-        if args.prior_path is not None:
+        if args.prior_path is not None and args.use_prior:
             print("Prior file was found in given path.")
             df = pd.read_csv(args.prior_path)
             self.prior_classes = dict(zip(df.values[:, 0], df.values[:, 1]))
@@ -408,21 +408,30 @@ class ComputePrior:
         if not os.path.exists(self.path_dest):
             os.makedirs(self.path_dest)
 
-        df_train = pd.DataFrame({"Classes": list(self.classes.values()),
-                                 "avg_pred": self.avg_pred_train.cpu()})
+        # df_train = pd.DataFrame({"Classes": list(self.classes.values()),
+        #                          "avg_pred": self.avg_pred_train.cpu()})
+        df_train = pd.DataFrame({"Classes": list(self.classes),
+                                  "avg_pred": self.avg_pred_train.cpu()})
+        
         df_train.to_csv(path_or_buf=os.path.join(self.path_dest, "train_avg_preds.csv"),
                         sep=',', header=True, index=False, encoding='utf-8')
 
         if self.avg_pred_val is not None:
-            df_val = pd.DataFrame({"Classes": list(self.classes.values()),
+            # df_val = pd.DataFrame({"Classes": list(self.classes.values()),
+            #                        "avg_pred": self.avg_pred_val.cpu()})
+            
+            df_val = pd.DataFrame({"Classes": list(self.classes),
                                    "avg_pred": self.avg_pred_val.cpu()})
+            
             df_val.to_csv(path_or_buf=os.path.join(self.path_dest, "val_avg_preds.csv"),
                           sep=',', header=True, index=False, encoding='utf-8')
 
     def get_top_freq_classes(self):
         n_top = 10
         top_idx = torch.argsort(-self.avg_pred_train.cpu())[:n_top]
-        top_classes = np.array(list(self.classes.values()))[top_idx]
+        # top_classes = np.array(list(self.classes.values()))[top_idx]
+        top_classes = np.array(list(self.classes))[top_idx]
+        
         print('Prior (train), first {} classes: {}'.format(n_top, top_classes))
         
         

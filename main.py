@@ -40,6 +40,7 @@ parser.add_argument('--project', default='CvT')
 parser.add_argument('--use_wandb', action="store_true")
 parser.add_argument('--no_validation', action="store_true")
 parser.add_argument('--grad_accumulation', default=1, type=int)
+parser.add_argument('--use_prior', action="store_true")
 
 
 
@@ -79,7 +80,7 @@ if args.loss_name == 'PartialSelectiveLoss':
     parser.add_argument('--alpha_neg', type=float, default=1)
     parser.add_argument('--alpha_unann', type=float, default=1)
     parser.add_argument('--likelihood_topk', type=int, default=5)
-    parser.add_argument('--prior_path', type=str, default=None)
+    parser.add_argument('--prior_path', type=str, default="/home/sorijune/AICOSS/DATA/prior.csv")
     parser.add_argument('--prior_threshold', type=float, default=0.05)
     # parser.add_argument('-b', '--batch-size', default=160, type=int,
     #                     metavar='N', help='mini-batch size (default: 64)')
