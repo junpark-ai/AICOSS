@@ -155,7 +155,7 @@ class MLDecoder(nn.Module):
         else:  # [bs, 197,468]
             embedding_spatial = x
         embedding_spatial_786 = self.decoder.embed_standart(embedding_spatial)
-        embedding_spatial_786 = torch.nn.functional.relu(embedding_spatial_786, inplace=True)
+        embedding_spatial_786 = torch.nn.functional.relu(embedding_spatial_786, inplace=False)
 
         bs = embedding_spatial_786.shape[0]
         if self.zsl:
@@ -235,7 +235,7 @@ class learnable_MLDecoder(nn.Module):
         else:  # [bs, 197,468]
             embedding_spatial = x
         embedding_spatial_786 = self.decoder.embed_standart(embedding_spatial)
-        embedding_spatial_786 = torch.nn.functional.relu(embedding_spatial_786, inplace=True)
+        embedding_spatial_786 = torch.nn.functional.relu(embedding_spatial_786, inplace=False)
 
         bs = embedding_spatial_786.shape[0]
         if self.zsl:
