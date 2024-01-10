@@ -184,6 +184,22 @@ class tresnetv2_l_mldecoder(nn.Module):
         out = self.mldecoder(features_vit)
         return out
 
+class tresnetv2_l_learnable_mldecoder(nn.Module):
+    def __init__(self):
+        super(tresnetv2_l_mldecoder, self).__init__()
+
+        self.backbone = timm.create_model("tresnet_v2_l", pretrained=True)
+        self.backbone.head = nn.Identity()
+        # Image Classifier
+        self.mldecoder = learnable_MLDecoder(num_classes=60, initial_num_features=2048)
+
+    def forward(self, images):
+        # Swin v2
+        features_vit = self.backbone(images)
+        
+        # multi label classification
+        out = self.mldecoder(features_vit)
+        return out
 
 
 # 모델 변경할 때, conv_out 부분만 바꿔주면 됨
