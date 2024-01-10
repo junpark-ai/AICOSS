@@ -186,7 +186,7 @@ class tresnetv2_l_mldecoder(nn.Module):
 
 class tresnetv2_l_learnable_mldecoder(nn.Module):
     def __init__(self):
-        super(tresnetv2_l_mldecoder, self).__init__()
+        super(tresnetv2_l_learnable_mldecoder, self).__init__()
 
         self.backbone = timm.create_model("tresnet_v2_l", pretrained=True)
         self.backbone.head = nn.Identity()
