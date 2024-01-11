@@ -15,7 +15,7 @@ import lightning as L
 model_list = ['resnet101', 'resnet50', 'resnet50_mldecoder', 'swinv2', 'swinv2_mldecoder', 
               'tresnet_l_learnable_mldecoder', 'tresnet_xl_learnable_mldecoder', 'tresnet_xl_mldecoder', 
                 'tresnet_xl_q2l', 'tresnetv2_l_mldecoder', 'tresnetv2_l_learnable_mldecoder',
-                'cvt_q2l', 'cvt_learnable_mldecoder', 'cvt_mldecoder',
+                'cvt_q2l', 'cvt_learnable_mldecoder', 'cvt_mldecoder', 'tresnetv2_l_q2l',
                 'cvt384_q2l']
 
 loss_list = ['AsymmetricLoss', 'AsymmetricLossOptimized', 'ComputePrior', 'FocalLoss', 
