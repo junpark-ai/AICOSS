@@ -15,10 +15,10 @@ def inference(model, test_loader, sample_submission, now_time, args, fabric):
             predicted_label_list += nn.Sigmoid()(model(imgs)).tolist()
         
     
-    torch.save(model.state_dict(), f'{args.model_name}-{now_time}.pt')
+    torch.save(model.state_dict(), f'{args.save_path}/{args.model_name}-{now_time}.pt')
     
     predicted = pd.DataFrame(predicted_label_list, columns=list(sample_submission.columns)[1:])
     result = pd.concat([sample_submission.img_id, predicted], axis=1)
 
-    result.to_csv(f'{args.model_name}-{now_time}.csv', index=False)
+    result.to_csv(f'{args.save_path}/{args.model_name}-{now_time}.csv', index=False)
     print(f"Inference completed and results saved to csv file.\nNow time: {now_time}")

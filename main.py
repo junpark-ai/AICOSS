@@ -37,13 +37,15 @@ parser.add_argument('--gpu', default='0, 1, 2, 3', type=str)
 parser.add_argument('--model_name', default='cvt_q2l', choices = model_list)
 parser.add_argument('--path', default='/home/sorijune/AICOSS/DATA/')
 parser.add_argument('--loss_name', default='PartialSelectiveLoss', choices = loss_list)
-parser.add_argument('--project', default='CvT')
 parser.add_argument('--use_wandb', action="store_true")
 parser.add_argument('--no_validation', action="store_true")
 parser.add_argument('--grad_accumulation', default=1, type=int)
 parser.add_argument('--use_prior', action="store_true")
+parser.add_argument('--save_path', default='./', type=str)
 
 
+parser.add_argument('--entity', default='aicoss-rcvuos', type=str)
+parser.add_argument('--project', default='CvT', type=str)
 
 
 args = parser.parse_args()
@@ -160,12 +162,11 @@ def main():
     # Fabric
     model, optimizer = fabric.setup(model, optimizer)
     train_loader = fabric.setup_dataloaders(train_loader)
-    
-    train(model, criterion, optimizer, train_loader, args, scheduler, val_loader, args.use_wandb, fabric)
-    
-    
+
     now = datetime.now()
     now_time = now.strftime("%m%d_%H%M")
+    
+    train(model, criterion, optimizer, train_loader, args, now_time, scheduler, val_loader, args.use_wandb, fabric)
     
     if fabric.global_rank == 0:
         inference(model, test_loader, sample_submission, now_time, args, fabric)

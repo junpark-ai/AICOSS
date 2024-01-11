@@ -42,9 +42,22 @@ def val(model, criterion, val_loader, args, fabric=None):
 
 
 
-def train(model, criterion, optimizer, train_loader, args, scheduler=None, val_loader=None, Wandb=True, fabric=None):
+def train(model, criterion, optimizer, train_loader, args, now_time, scheduler=None, val_loader=None, Wandb=True, fabric=None):
     if Wandb and fabric.global_rank == 0:
-        wandb.init(group='DDP', entity='aicoss-rcvuos', project=args.project, name= args.model_name + '-' +args.loss_name, notes=str(torch.cuda.get_device_name())+' x '+str(1))
+        wandb.init(entity=args.entity, project=args.project,
+                   name=args.model_name+'-'+args.loss_name+'-'+now_time,
+                   notes=str(torch.cuda.get_device_name())+' x '+str(1),
+                   config={
+                    "seed":args.seed,
+                    "img_size":args.img_size,
+                    "epochs": args.epochs,
+                    "batch_size": args.batch_size,
+                    "learning_rate": args.lr,
+                    "min_lr":args.min_lr,
+                    "weight_decay":args.weight_decay,
+                    "model_name":args.model_name,
+                    "loss_name":args.loss_name,
+                   })
     # 학습
     # prior = ComputePrior(train_loader.dataset.__getitem__(0)[1])
     for epoch in range(args.epochs):
