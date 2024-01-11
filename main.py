@@ -42,6 +42,7 @@ parser.add_argument('--no_validation', action="store_true")
 parser.add_argument('--grad_accumulation', default=1, type=int)
 parser.add_argument('--use_prior', action="store_true")
 parser.add_argument('--save_path', default='./', type=str)
+parser.add_argument('--cutout_factor', default=0.5, type=float)
 
 
 parser.add_argument('--entity', default='aicoss-rcvuos', type=str)
