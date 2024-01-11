@@ -57,6 +57,7 @@ def train(model, criterion, optimizer, train_loader, args, now_time, scheduler=N
                     "weight_decay":args.weight_decay,
                     "model_name":args.model_name,
                     "loss_name":args.loss_name,
+                    "use_prior":args.use_prior
                    })
     # 학습
     # prior = ComputePrior(train_loader.dataset.__getitem__(0)[1])
