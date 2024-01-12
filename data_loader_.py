@@ -116,6 +116,7 @@ def My_DataLoader(train_data, args, val_data=None, test_data=None, num_workers=1
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomVerticalFlip(p=0.5),
         RandomRotationWithPadding(degrees=(0, 180)),
+    ] + [CutoutPIL(cutout_factor=0.1) for _ in range(args.num_cutouts)] + [
         transforms.ToTensor(),
         # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
