@@ -170,7 +170,7 @@ def main():
     
     train(model, criterion, optimizer, train_loader, args, now_time, scheduler, val_loader, args.use_wandb, fabric)
     
-    if fabric.global_rank == 0:
+    if fabric.global_rank == 0 and not args.no_inference:
         inference(model, test_loader, sample_submission, now_time, args, fabric)
     
     
