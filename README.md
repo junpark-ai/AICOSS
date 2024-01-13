@@ -11,8 +11,8 @@ For single-GPU training and more information about the competition, you can use 
 You should install [Anaconda](https://docs.anaconda.com/free/anaconda/install/index.html) for the following codes.
 
 ```bash
-git clone https://github.com/seok-AI/2023-AICOSS
-cd 2023-AICOSS/
+git clone https://github.com/junpark-ai/AICOSS
+cd AICOSS/
 conda env create -f ddp.yaml
 ```
 
