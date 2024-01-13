@@ -84,7 +84,7 @@ if args.loss_name == 'PartialSelectiveLoss':
     parser.add_argument('--alpha_neg', type=float, default=1)
     parser.add_argument('--alpha_unann', type=float, default=1)
     parser.add_argument('--likelihood_topk', type=int, default=5)
-    parser.add_argument('--prior_path', type=str, default="/home/sorijune/AICOSS/DATA/prior.csv")
+    parser.add_argument('--prior_path', type=str, default=None)
     parser.add_argument('--prior_threshold', type=float, default=0.05)
     # parser.add_argument('-b', '--batch-size', default=160, type=int,
     #                     metavar='N', help='mini-batch size (default: 64)')
@@ -151,8 +151,8 @@ def main():
     else:
         criterion = globals()[args.loss_name]()
          
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)  # TODO
-    base_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs+args.warmup, eta_min=args.min_lr)  # TODO
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    base_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs+args.warmup, eta_min=args.min_lr)
     if args.warmup != 0:
         scheduler = warmup_scheduler.GradualWarmupScheduler(optimizer, multiplier=1., total_epoch=args.warmup, after_scheduler=base_scheduler)
     else:
